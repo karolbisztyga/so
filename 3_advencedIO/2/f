@@ -1,0 +1,9 @@
+Powyższa funkcja implementuje następującą funkcjonalność:
+Pyta użytkownika czy chce wypisać zawartość podanego jako argument pliku.
+Jeżeli tak, to otwiera i przy pomocy funkcji czytania asynchronicznego aio_read(3) odczytuje zawartość pliku i wypisuje ją na ekran.
+Powyższe zadanie najlepiej wykonać stosując taki oto scenariusz:
+Otwieramy plik open(2)
+Inicjalizujemy wczytywanie pierwszej porcji danych aio_read(3).
+Przy pomocy funkcji aio_error(3) czekamy do momentu aż odczyt się zakończy.
+Wyświetlamy wczytane dane i wracamy do 2 jeżeli nie osiągnęliśmy końca pliku.
+Wywołanie funkcji print_content w funkcji main powinno wyglądać następująco:

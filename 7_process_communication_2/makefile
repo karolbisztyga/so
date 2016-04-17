@@ -8,7 +8,10 @@ sv: cw2/srvsv.c cw2/cntsv.c
 	gcc cw2/srvsv.c -o srvsv.exe ; gcc cw2/cntsv.c -o cntsv.exe
 
 psx: cw3/srvpsx.c cw3/cntpsx.c
-	gcc -lrt cw3/srvpsx.c -o srvpsx.exe ; gcc -lrt cw3/cntpsx.c -o cntpsx.exe
+	gcc -lrt cw3/srvpsx.c -o srvpsx.exe -lrt ; gcc -lrt cw3/cntpsx.c -o cntpsx.exe -lrt
+
+eliza: chatbot/eliza.c
+	gcc -Wall -ansi -pedantic chatbot/eliza.c -o eliza.exe
 
 clean:
 	rm *.exe

@@ -35,7 +35,7 @@ int main(void)
 
   /* Opening fifo */
   printf("OK\nOpening server fifo queue \'%s\' for reading...", fifosrvname);
-  fdsrv = open(fifosrvname, O_RDONLY);
+  fdsrv = open(fifosrvname, O_RDONLY | O_NONBLOCK);
   if(fdsrv == -1)
     {
       printf("FAIL!\nError: \'%s\'\n", strerror(errno));
@@ -46,13 +46,18 @@ int main(void)
   while(1)
     {
       /* Reading from queue */
-      printf("Waiting for data...");
-      bread = read(fdsrv, &msg, sizeof(msg));
-      if(bread == -1)
-	{
-	  printf("FAIL!\nError: %s\n", strerror(errno));
-	  break;
-	}
+      printf("Waiting for data");
+      while((bread = read(fdsrv, &msg, sizeof(msg)))<=0) {
+        if(bread == -1 && errno != EAGAIN)
+        {
+          printf("FAIL!\nError: %s\n", strerror(errno));
+          break;
+        }
+        printf(".");
+        fflush(stdout);
+        usleep(1000000);
+      }
+      
       printf("OK\n");
 
       printf("Message from client [%d]: %s\n", msg.pid, msg.data);

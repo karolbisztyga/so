@@ -62,7 +62,7 @@ int main(void)
 
       /* Opening client fifo for reading */
       printf("OK\nOpening client fifo queue \'%s\' for reading...", fifocntname);
-      fdcnt = open(fifocntname, O_RDONLY);
+      fdcnt = open(fifocntname, O_RDONLY | O_NONBLOCK);
       if(fdcnt == -1)
 	{
 	  printf("FAIL!\nError: %s\n", strerror(errno));
@@ -71,8 +71,12 @@ int main(void)
       printf("OK\n");
 
       /* Reading responce */
-      printf("Waiting for data...");
-      bread = read(fdcnt, &msg, sizeof(msg));
+      printf("Waiting for data");
+      while((bread = read(fdcnt, &msg, sizeof(msg)))==0) {
+        printf(".");
+        fflush(stdout);
+        usleep(1000000);
+      }
       if(bread == -1)
 	{
 	  printf("FAIL!\nError: %s\n", strerror(errno));

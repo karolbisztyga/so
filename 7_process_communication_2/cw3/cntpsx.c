@@ -23,10 +23,12 @@ int main(void)
     bwrite;
   pid_t pid;
   struct message msg;
+  struct mq_attr ma;
   
   printf("Server started...\n");
   setbuf(stdout, NULL);
   msgsize = sizeof(msg);
+  ma.mq_msgsize = msgsize;
   pid = getpid();
   msg.pid = pid;
 
@@ -49,7 +51,7 @@ int main(void)
   /* Opening client queue for reading  */
   printf("Opening client queue \'%s\' for reading...", cntpsxqname);
   mq_unlink(cntpsxqname);
-  qdcnt = mq_open(cntpsxqname, O_RDONLY | O_CREAT, PERM_FILE, NULL);
+  qdcnt = mq_open(cntpsxqname, O_RDONLY | O_CREAT, PERM_FILE, &ma);
   if(qdcnt == -1)
     {
       printf("FAIL!\nError: %s\n", strerror(errno));

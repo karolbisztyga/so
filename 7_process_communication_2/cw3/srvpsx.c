@@ -22,10 +22,12 @@ int main(void)
     bread,
     bwrite;
   struct message msg;
-  
+  struct mq_attr ma;
+
   printf("Server started...\n");
   setbuf(stdout, NULL);
   msgsize = sizeof(msg);
+  ma.mq_msgsize = msgsize;
 
   /* Creating server psx queue */
   make_srv_psx_name(srvpsxqname, srvpsxqbasename, PSX_QUEUE_NAME);
@@ -33,7 +35,7 @@ int main(void)
   /* Opening server psx queue */
   printf("Opening server queue \'%s\' for reading...", srvpsxqname);
   mq_unlink(srvpsxqname);
-  qdsrv = mq_open(srvpsxqname, O_RDONLY | O_CREAT, PERM_FILE, NULL);
+  qdsrv = mq_open(srvpsxqname, O_RDONLY | O_CREAT, PERM_FILE, &ma);
   if(qdsrv == -1)
     {
       printf("FAIL!\nError: %s.\n", strerror(errno));

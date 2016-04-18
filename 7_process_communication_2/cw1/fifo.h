@@ -48,6 +48,7 @@ int stdin_readall(char* dest, int MAXLEN)
 
   return strcmp(dest, "q");
 }
+
 /* ------------------------------------------------------------- */
 
 #endif

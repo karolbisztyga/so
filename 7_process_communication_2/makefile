@@ -13,5 +13,9 @@ psx: cw3/srvpsx.c cw3/cntpsx.c
 eliza: chatbot/eliza.c
 	gcc -Wall -ansi -pedantic chatbot/eliza.c -o eliza.exe
 
+chatbot: chatbot/server.c chatbot/client.c
+	gcc -Wall -ansi -pedantic -std=gnu99 chatbot/server.c -o server_chatbot.exe;
+	gcc -Wall -ansi -pedantic -std=gnu99 chatbot/client.c -o client_chatbot.exe
+
 clean:
 	rm *.exe

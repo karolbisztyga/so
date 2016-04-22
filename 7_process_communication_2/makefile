@@ -17,5 +17,9 @@ chatbot: chatbot/server.c chatbot/client.c
 	gcc -Wall -ansi -pedantic -std=gnu99 chatbot/server.c -o server_chatbot.exe;
 	gcc -Wall -ansi -pedantic -std=gnu99 chatbot/client.c -o client_chatbot.exe
 
+votes_counter: votes/client.c votes/server.c
+	gcc -Wall -ansi -pedantic -std=gnu99 votes/client.c -o client_votes.exe -lrt;
+	gcc -Wall -ansi -pedantic -std=gnu99 votes/server.c -o server_votes.exe -lrt
+
 clean:
 	rm *.exe

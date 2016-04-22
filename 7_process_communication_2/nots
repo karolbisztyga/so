@@ -1,4 +1,4 @@
 1)
-	open server fifo mam iec dodane O_NONBLOCK i zignorowany error EAGAIN przy read
+	open server fifo ma miec dodane O_NONBLOCK i zignorowany error EAGAIN przy read
 2)
 	struktura mq_attr przekazywana do open zamiast NULL na koncu i ma miec ustalony mq_msgsize

@@ -14,13 +14,13 @@
 #define INTERVAL 100000
 #define KEY 9
 #define RIGHT 1
-#define LEFT -1
-#define EMPTY 0
+#define LEFT 0
 #define SIZE 5
+#define TEST 0
 
 int errorHandler(char*);
-int monkeyGoesOn(int*,int);
-void monkeyGoesOff();
+int monkeyGoesOn(int,int,int);
+void *monkeyGoesOff(void*);
 int getInterval();
 
 /*
@@ -33,19 +33,20 @@ int main() {
 	srand(time(NULL));
 
 	int shmid, semid;
-	int f,i,monkeys,n;
+	int f,i,monkeys,res,e;
 	pthread_t *ths;
-	struct sembuf sb;
-	sb.sem_num = 0;
-	sb.sem_flg = 0;
 	monkeys = 10;
 	/* inicjuje pamiec wspoldzielona */
-	if((shmid=shmget(KEY,sizeof(int)*SIZE,IPC_CREAT|0777))==-1) {
+	/* pamiec wspoldzielona:
+		[0] - ilosc malp idacych z lewej
+		[1] - ilosc malp idacych z prawej
+ 	*/
+	if((shmid=shmget(KEY,sizeof(int)*2,IPC_CREAT|0777))==-1) {
 		errorHandler("shmget");
 	}
 	/* ustawia wartosci poczatkowe pamieci wspoldzielonej */
 	int *mut = shmat(shmid,NULL,0);
-	for(i=0;i<SIZE;++i) {
+	for(i=0;i<2;++i) {
 		mut[i] = 0;
 	}
 	/* inicjuje semafor sluzacy do operowania na pamieci wspoldzielonej */
@@ -60,44 +61,63 @@ int main() {
 		errorHandler("fork");
 	} else if(f==0) {
 		/*child*/
+		int tharr[3];
+		tharr[0] = semid;
+		tharr[1] = shmid;
 		ths = malloc(sizeof(pthread_t)*monkeys);
 		i=0;
 		while(i<monkeys) {
-			printf("[c] %d\n", i);
-			sb.sem_op = -1;
-			if(semop(semid, &sb, 1)==-1) {
-				errorHandler("semop wait child");
-			}
-			/* sekcja krytyczna */
-			int *rope = shmat(shmid,NULL,0);
-			n=monkeyGoesOn(rope, LEFT);
-			if(n==-1) {
+			res = monkeyGoesOn(LEFT,semid,shmid);
+			if(res == 0) {
+				printf("[CHILD] monkey got on the rope %d\n", i);
+				/* tworzy watek, ktory po jakims czasie zdejmuje malpe z liny */
+				tharr[2] = LEFT;
+				if((e=pthread_create(&ths[i], NULL, monkeyGoesOff, tharr))>0) {
+					printf("error pthread_join: %s", strerror(e));
+				}
+				++i;
+			} else if(res == 1) {
 				usleep(getInterval());
-				monkeyGoesOff(rope);
-				printf("[uc %d]\n", n);
-				continue;
-			} else if(n==-2) {
+				if(TEST==1)printf("[CHILD] monkey tried to get on the rope but it is full\n");
+			} else if(res == 2) {
 				usleep(getInterval());
-				printf("[uc %d]\n", n);
-				continue;
+				if(TEST==1)printf("[CHILD] monkey tried to get on the rope but there are monkeys goin from the other side\n");
 			}
-			++i;
-			sb.sem_op = 1;
-			if(semop(semid, &sb, 1)==-1) {
-				errorHandler("semop wait child");
-			}
-			printf("+monkey got on the rope on the left %d\n", n);
-			/* sekcja krytyczna */
 		}
 		for(i=0;i<monkeys;++i) {
-			pthread_join(ths[i], NULL);
+			if((e=pthread_join(ths[i], NULL))!=0) {
+				printf("error pthread_join: %s", strerror(e));
+			}
 		}
 	} else {
 		/*parent*/
+		int tharr[3];
+		tharr[0] = semid;
+		tharr[1] = shmid;
 		ths = malloc(sizeof(pthread_t)*monkeys);
 		i=0;
-		while(i<-1) {
-			
+		while(i<monkeys) {
+			res = monkeyGoesOn(RIGHT,semid,shmid);
+			if(res == 0) {
+				printf("[PARENT] monkey got on the rope %d\n", i);
+				/* tworzy watek, ktory po jakims czasie zdejmuje malpe z liny */
+				tharr[2] = RIGHT;
+				if((e=pthread_create(&ths[i], NULL, monkeyGoesOff, tharr))>0) {
+					printf("error pthread_join: %s", strerror(e));
+				}
+				++i;
+			} else if(res == 1) {
+				usleep(getInterval());
+				if(TEST==1)printf("[PARENT] monkey tried to get on the rope but it is full\n");
+			} else if(res == 2) {
+				usleep(getInterval());
+				if(TEST==1)printf("[PARENT] monkey tried to get on the rope but there are monkeys goin from the other side\n");
+			}
+		}
+		for(i=0;i<monkeys;++i) {
+			if((e=pthread_join(ths[i], NULL))!=0) {
+				printf("error pthread_join: %s", strerror(e));
+			}
 		}
 		waitpid(f,0,0);
 
@@ -119,104 +139,78 @@ int main() {
 	return 0;
 }
 
-void printRope(int *r) {
-	int i;
-	printf("---[");
-	for(i=0;i<SIZE;++i) {
-		printf("%d ", r[i]);
-	}
-	printf("]\n");
-}
-
 /*
 	sprawdza czy jest taka opcja, zeby malpa z danej strony weszla na line
-	jesli tak, zwraca pozycje malpy na linie, jesli nie to:
-		-1 lina jest full
-		-2 na linie sa malpy idace w przeciwna strone
+	jesli tak to dodaje ja na line
+	return:
+		0 - malpa dodana na line
+		1 - lina pelna
+		2 - na linie sa malpy idace w przeciwna strone
 */
-int monkeyGoesOn(int *rope, int side) {
-	int i=0;
-	while(rope[i]!=EMPTY) {
-		if(rope[i] == -side) {
-			return -2;
-		}
-		if(i>SIZE) {
-			return -1;
-		}
-		++i;
-	}
-	rope[i] = side;
-	return i;
-}
-
-int getInterval() {
-	return (rand()%INTERVAL)+INTERVAL;
-}
-
-void monkeyGoesOff(int *rope) {
-	int size=0,i;
-	while(rope[size] != EMPTY && size<SIZE) {
-		++size;
-	}
-	if(size == 0) {
-		return;
-	}
-	for(i=1;i<SIZE;++i) {
-		if(i<size)
-			rope[i-1] = rope[i];
-		else
-			rope[i]=EMPTY;
-	}
-}
-
-/*
-	funkcja dla watku
-	zdejmuje pierwsza z brzegu malpe z liny po okreslonym czasie
-	args
-		int interval,
-		int semid,
-		int shmid,
-*/
-void *monkeyGoesOffold(void *args) {
-	int *argarr = (int*)args;
-	int semid = argarr[0];
-	int shmid = argarr[1];
-	int size=0,i;
+int monkeyGoesOn(int side, int semid, int shmid) {
+	int result = 0;
 	struct sembuf sb;
 	sb.sem_num = 0;
 	sb.sem_flg = 0;
 
-	usleep((rand()%INTERVAL)+INTERVAL);
 	sb.sem_op = -1;
 	if(semop(semid, &sb, 1)==-1) {
-		errorHandler("semop wait monkeyGoesOff");
+		errorHandler("semop wait child");
 	}
-	int *rope = shmat(shmid,NULL,0);
 	/* sekcja krytyczna */
-	while(rope[size] != EMPTY && size<SIZE) {
-		++size;
-	}
-	if(size == 0) {
-		sb.sem_op = 1;
-		if(semop(semid, &sb, 1)==-1) {
-			errorHandler("semop free monkeyGoesOff");
-		}
-		return NULL;
-	}
-	for(i=1;i<SIZE;++i) {
-		if(i<size)
-			rope[i-1] = rope[i];
-		else
-			rope[i]=EMPTY;
+	int *mut = shmat(shmid,NULL,0);
+	if(side == LEFT) {
+		if(mut[RIGHT] > 0) result = 2;
+		else if(mut[LEFT] >= SIZE) result = 1;
+		else ++mut[LEFT];
+	} else {
+		if(mut[LEFT] > 0) result = 2;
+		else if(mut[RIGHT] >= SIZE) result = 1;
+		else ++mut[RIGHT];
 	}
 	/* sekcja krytyczna */
 	sb.sem_op = 1;
 	if(semop(semid, &sb, 1)==-1) {
-		errorHandler("semop free monkeyGoesOff");
+		errorHandler("semop wait child");
 	}
-	printf("-monkey went off the rope\n");
-	printRope(rope);
+	return result;
+}
+
+/*
+	args:
+		semid
+		shmid
+		side
+*/
+void *monkeyGoesOff(void *args) {
+	int *argarr = (int*)args;
+	int semid = argarr[0];
+	int shmid = argarr[1];
+	int side = argarr[2];
+	struct sembuf sb;
+	sb.sem_num = 0;
+	sb.sem_flg = 0;
+	
+	usleep(getInterval());
+
+	sb.sem_op = -1;
+	if(semop(semid, &sb, 1)==-1) {
+		errorHandler("semop wait child");
+	}
+	/* sekcja krytyczna */
+	int *mut = shmat(shmid,NULL,0);
+	--mut[side];
+	/* sekcja krytyczna */
+	sb.sem_op = 1;
+	if(semop(semid, &sb, 1)==-1) {
+		errorHandler("semop wait child");
+	}
+	printf("monkey got off the rope \n");
 	return NULL;
+}
+
+int getInterval() {
+	return (rand()%INTERVAL)+INTERVAL;
 }
 
 int errorHandler(char* title) {

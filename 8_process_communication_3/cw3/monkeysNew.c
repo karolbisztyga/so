@@ -11,7 +11,7 @@
 #include <time.h>
 #include <pthread.h>
 
-#define INTERVAL 100000
+#define INTERVAL 1000000
 #define KEY 9
 #define RIGHT 1
 #define LEFT 0
@@ -89,6 +89,7 @@ int main() {
 				printf("error pthread_join: %s", strerror(e));
 			}
 		}
+		free(ths);
 	} else {
 		/*parent*/
 		int tharr[3];
@@ -119,6 +120,7 @@ int main() {
 				printf("error pthread_join: %s", strerror(e));
 			}
 		}
+		free(ths);
 		waitpid(f,0,0);
 
 		/* koniec */

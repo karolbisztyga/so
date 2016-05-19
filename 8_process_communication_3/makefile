@@ -1,5 +1,5 @@
-monkeys: cw3/monkeysNew.c
-	gcc -Wall -ansi -pedantic cw3/monkeysNew.c -o monkeys.exe -std=gnu99 -pthread
+monkeys: cw3/monkeys.c
+	gcc -Wall -ansi -pedantic cw3/monkeys.c -o monkeys.exe -std=gnu99 -pthread
 
 test: test.c
 	gcc -Wall -ansi -pedantic test.c -o test.exe -std=gnu99

@@ -64,14 +64,15 @@ int main(void)
 		perror("sigaction");
 		exit(1);
 	}
- 
-	sin_size = sizeof their_addr;
-	if ((new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size)) == -1) {
-		perror("accept");
-	}
-	printf("server: got connection from %s\n",inet_ntoa(their_addr.sin_addr));
-	if (send(new_fd, "Hello, world!\n", 14, 0) == -1)
-		perror("send");
+ 	while(1==1) {
+		sin_size = sizeof their_addr;
+		if ((new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size)) == -1) {
+			perror("accept");
+		}
+		printf("server: got connection from %s\n",inet_ntoa(their_addr.sin_addr));
+		if (send(new_fd, "Hello, world!\n", 14, 0) == -1)
+			perror("send");
+	}	
 	sleep(5);
 	close(new_fd);
  

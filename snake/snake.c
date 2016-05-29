@@ -39,7 +39,7 @@ void display(struct snake*,int);
 
 int main(int argc, char* argv[]) {
 
-	struct snake *snake = getSnake(3, 5);
+	struct snake *snake = getSnake(5, 8);
 
 	display(snake, 1);
 	usleep(1000000);
@@ -152,7 +152,7 @@ void changeDirection(struct snake *snake) {
 
 int move(struct snake *snake) {
 	struct snakeDot *curr;
-	if(snake->boardSize/2 < snake->directionChangeCount/3) {
+	if(snake->boardSize/2 <= snake->directionChangeCount/3) {
 		snake->direction = oppositeDirection(snake->direction);
 		snake->modifierSign *= -1;
 	}

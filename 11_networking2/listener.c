@@ -12,7 +12,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
  
-#define MYPORT 1113	// the port users will be connecting to
+#define MYPORT 1111	// the port users will be connecting to
  
 #define MAXBUFLEN 100
  

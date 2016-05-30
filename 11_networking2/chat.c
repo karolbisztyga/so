@@ -10,7 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define BUFFLEN 32
+#define BUFFLEN 8
 #define PORT 1111
 
 int charToInt(char*);
@@ -51,18 +51,17 @@ int main(int argc, char *argv[]) {
 
 		addr_len = sizeof their_addr;
 		for(;;) {
-			if ((nbytes = recvfrom(sockfd, buf, BUFFLEN-1 , 0,
+			if ((nbytes = recvfrom(sockfd, buf, BUFFLEN , 0,
 				(struct sockaddr *)&their_addr, &addr_len)) == -1) {
 				perror("recvfrom");
 				exit(1);
 			}
-			buf[nbytes] = '\0';
 			printf("*[%s]\n",buf);
 		}
 		
 	} else {
 
-		int n;
+		int n,i;
 		struct hostent *he;
 
 		if(dup2(fd, STDIN_FILENO)==-1) {
@@ -83,7 +82,8 @@ int main(int argc, char *argv[]) {
 			if((n=read(fd,buf,sizeof(buf)))==-1) {
 				perror("read");
 			}
-			buf[n-1]=0;
+			if(n<8)buf[n-1]=0;
+			//printf("sending [%s] %d\n",buf,n);
 			if ((nbytes = sendto(sockfd, buf, sizeof(buf), 0,
 					 (struct sockaddr *)&their_addr, sizeof(their_addr))) == -1) {
 				perror("sendto");
